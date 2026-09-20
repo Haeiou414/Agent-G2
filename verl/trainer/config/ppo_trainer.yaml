@@ -343,7 +343,7 @@ gmsv:
   sigma_min: 0.1
   gamma: 1.0
   fixed_sigma: 0.25
-  prefix_sample_mode: gaussian # gaussian or uniform_fixed
+  prefix_sample_mode: gaussian # gaussian, deterministic_mean, or uniform_fixed
   uniform_half_width: 0.25
   allow_full_prefix: False
   empty_policy_rollout_retry_limit: 3

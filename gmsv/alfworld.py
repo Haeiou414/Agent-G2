@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any, Optional
 
 import numpy as np
-from verl.utils.checkpoint.checkpoint_manager import find_latest_ckpt_path
 
 
 def clip_value(value: float, low: float, high: float) -> float:
@@ -304,6 +303,9 @@ class GMSVAlfworldPrefixRuntime:
             sampled_ratio = float(self.rng.normal(loc=mu, scale=max(sigma, 1e-8)))
             return sampled_ratio, clip_value(sampled_ratio, 0.0, max_length)
 
+        if sample_mode == "deterministic_mean":
+            return float(mu), clip_value(float(mu), 0.0, max_length)
+
         if sample_mode == "uniform_fixed":
             env_name = str(self.config.env.env_name).lower()
             if "alfworld" not in env_name:
@@ -324,6 +326,10 @@ class GMSVAlfworldPrefixRuntime:
         return os.path.join(checkpoint_folder, "gmsv_runtime_state.json")
 
     def _resolve_checkpoint_folder(self) -> Optional[str]:
+        # Keep the scheduler importable for CPU-only audits without loading the
+        # distributed veRL/Ray stack. Training still resolves the same helper.
+        from verl.utils.checkpoint.checkpoint_manager import find_latest_ckpt_path
+
         resume_mode = str(self.config.trainer.resume_mode)
         if resume_mode == "disable":
             return None
@@ -458,36 +464,40 @@ class GMSVAlfworldPrefixRuntime:
     def update_after_train_batch(self, non_tensor_batch: dict[str, Any]) -> dict[str, float]:
         self.ensure_initialized()
 
-        traj_uids = non_tensor_batch.get("traj_uid")
-        rollout_ids = traj_uids if traj_uids is not None else non_tensor_batch.get("uid")
-        if rollout_ids is None:
+        # Paper Eq. (2) updates the schedule from per-task success estimates
+        # p_hat_i = mean_j(y_i,j). ``uid`` is shared by the R rollouts of a
+        # task, whereas ``traj_uid`` is unique to each individual rollout.
+        task_ids = non_tensor_batch.get("uid")
+        if task_ids is None:
+            task_ids = non_tensor_batch.get("traj_uid")
+        if task_ids is None:
             return {}
 
         difficulty_groups = np.asarray(non_tensor_batch.get("gmsv_difficulty_group", []))
         if difficulty_groups.size == 0:
             return {}
 
-        episode_rewards = np.asarray(non_tensor_batch.get("episode_rewards", np.zeros(len(rollout_ids), dtype=np.float32)), dtype=np.float32)
-        expert_matched = np.asarray(non_tensor_batch.get("gmsv_expert_matched", np.ones(len(rollout_ids), dtype=bool)), dtype=bool)
-        fixed_no_prefix_flags = np.asarray(non_tensor_batch.get("gmsv_fixed_no_prefix_train", np.zeros(len(rollout_ids), dtype=bool)), dtype=bool)
+        episode_rewards = np.asarray(non_tensor_batch.get("episode_rewards", np.zeros(len(task_ids), dtype=np.float32)), dtype=np.float32)
+        expert_matched = np.asarray(non_tensor_batch.get("gmsv_expert_matched", np.ones(len(task_ids), dtype=bool)), dtype=bool)
+        fixed_no_prefix_flags = np.asarray(non_tensor_batch.get("gmsv_fixed_no_prefix_train", np.zeros(len(task_ids), dtype=bool)), dtype=bool)
 
         grouped_rollout_flags: dict[Any, list[float]] = defaultdict(list)
         rollout_to_group: dict[Any, int] = {}
         rollout_fixed_no_prefix: dict[Any, bool] = {}
         rollout_expert_matched: dict[Any, bool] = {}
 
-        for rollout_id, group_id, episode_reward, is_matched, fixed_no_prefix in zip(
-            rollout_ids,
+        for task_id, group_id, episode_reward, is_matched, fixed_no_prefix in zip(
+            task_ids,
             difficulty_groups,
             episode_rewards,
             expert_matched,
             fixed_no_prefix_flags,
         ):
-            rollout_key = str(rollout_id)
-            grouped_rollout_flags[rollout_key].append(float(episode_reward > 0.0))
-            rollout_to_group[rollout_key] = int(group_id)
-            rollout_fixed_no_prefix[rollout_key] = rollout_fixed_no_prefix.get(rollout_key, False) or bool(fixed_no_prefix)
-            rollout_expert_matched[rollout_key] = rollout_expert_matched.get(rollout_key, False) or bool(is_matched)
+            task_key = str(task_id)
+            grouped_rollout_flags[task_key].append(float(episode_reward > 0.0))
+            rollout_to_group[task_key] = int(group_id)
+            rollout_fixed_no_prefix[task_key] = rollout_fixed_no_prefix.get(task_key, False) or bool(fixed_no_prefix)
+            rollout_expert_matched[task_key] = rollout_expert_matched.get(task_key, False) or bool(is_matched)
 
         grouped_rollout_accuracies: dict[int, list[float]] = defaultdict(list)
         scoreboard_grouped_rollout_accuracies: dict[int, list[float]] = defaultdict(list)
@@ -501,7 +511,7 @@ class GMSVAlfworldPrefixRuntime:
                 continue
 
             matched_rollout_count += 1
-            rollout_acc = float(max(flags)) if flags else 0.0
+            rollout_acc = float(np.mean(np.asarray(flags, dtype=np.float32))) if flags else 0.0
             group_id = rollout_to_group[rollout_id]
             rollout_accs.append(rollout_acc)
             grouped_rollout_accuracies[group_id].append(rollout_acc)
@@ -515,9 +525,14 @@ class GMSVAlfworldPrefixRuntime:
 
         batch_accuracy = float(np.mean(np.asarray(rollout_accs, dtype=np.float32))) if rollout_accs else 0.0
         scoreboard_batch_acc = float(np.mean(np.asarray(scoreboard_rollout_accs, dtype=np.float32))) if scoreboard_rollout_accs else 0.0
+        total_prompt_count = len(grouped_rollout_flags)
+        expert_match_rate = matched_rollout_count / total_prompt_count if total_prompt_count else 0.0
 
         metrics = {
+            "train/total_prompt_count": float(total_prompt_count),
             "train/matched_prompt_count": float(matched_rollout_count),
+            "train/expert_match_rate": float(expert_match_rate),
+            "train/expert_mismatch_rate": float(1.0 - expert_match_rate),
             "train/fixed_no_prefix_prompt_count": float(len(fixed_no_prefix_rollout_ids)),
             "train/batch_prompt_accuracy": batch_accuracy,
             "train/batch_prompt_accuracy_for_scoreboard": scoreboard_batch_acc,
@@ -598,21 +613,11 @@ class GMSVAlfworldPrefixRuntime:
             )
 
         sampled_ratio, clipped_ratio = self._sample_prefix_ratio(mu=mu, sigma=sigma)
-        raw_token_target = int(math.floor(total_tokens * clipped_ratio))
-        raw_token_target = max(0, min(raw_token_target, total_tokens))
-
-        if raw_token_target <= 0:
-            keep_steps = 0
-            extended = False
-        elif raw_token_target >= total_tokens:
-            keep_steps = total_steps
-            extended = False
-        else:
-            keep_steps = next(
-                (idx + 1 for idx, token_end in enumerate(trajectory.step_end_offsets) if token_end >= raw_token_target),
-                total_steps,
-            )
-            extended = trajectory.step_end_offsets[keep_steps - 1] > raw_token_target
+        # Paper Eq. (5) defines L_i as the number of expert actions, not the
+        # number of tokens in their textual representation.
+        keep_steps = int(math.ceil(total_steps * clipped_ratio))
+        keep_steps = max(0, min(keep_steps, total_steps))
+        extended = False
 
         allow_full_prefix = bool(self.gmsv_cfg.get("allow_full_prefix", False))
         if allow_full_prefix and "alfworld" not in str(self.config.env.env_name).lower():

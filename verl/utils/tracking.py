@@ -16,6 +16,8 @@ A unified tracking interface that supports logging data to different backend
 """
 
 import dataclasses
+import json
+import os
 from enum import Enum
 from functools import partial
 from pathlib import Path
@@ -33,7 +35,7 @@ class Tracking:
         logger: Dictionary of initialized logger instances for each backend.
     """
 
-    supported_backend = ["wandb", "mlflow", "swanlab", "vemlp_wandb", "tensorboard", "console", "clearml"]
+    supported_backend = ["wandb", "mlflow", "swanlab", "vemlp_wandb", "tensorboard", "console", "jsonl", "clearml"]
 
     def __init__(self, project_name, experiment_name, default_backend: Union[str, List[str]] = "console", config=None):
         if isinstance(default_backend, str):
@@ -120,6 +122,9 @@ class Tracking:
 
             self.console_logger = LocalLogger(print_to_console=True)
             self.logger["console"] = self.console_logger
+
+        if "jsonl" in default_backend:
+            self.logger["jsonl"] = _JsonlLoggingAdapter()
 
         if "clearml" in default_backend:
             self.logger["clearml"] = ClearMLLogger(project_name, experiment_name, config)
@@ -209,6 +214,39 @@ class _TensorboardAdapter:
 
     def finish(self):
         self.writer.close()
+
+
+class _JsonlLoggingAdapter:
+    """Append scalar metrics to a local, dependency-free JSONL artifact."""
+
+    def __init__(self):
+        output = os.environ.get("VERL_METRICS_JSONL_PATH", "metrics.jsonl")
+        self.path = Path(output)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def _scalar(value):
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        item = getattr(value, "item", None)
+        if callable(item):
+            try:
+                scalar = item()
+            except (TypeError, ValueError, RuntimeError):
+                return None
+            if isinstance(scalar, (str, int, float, bool)) or scalar is None:
+                return scalar
+        return None
+
+    def log(self, data, step):
+        metrics = {}
+        for key, value in data.items():
+            scalar = self._scalar(value)
+            if scalar is not None:
+                metrics[key] = scalar
+        row = {"step": int(step), "metrics": metrics}
+        with self.path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
 
 
 class _MlflowLoggingAdapter:

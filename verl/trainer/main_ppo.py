@@ -16,6 +16,7 @@ Note that we don't combine the main with ray_trainer as ray_trainer is used by o
 """
 
 import os
+from pathlib import Path
 
 import hydra
 import ray
@@ -32,6 +33,13 @@ def main(config):
 
 
 def run_ppo(config) -> None:
+    resolved_config_path = os.environ.get("VERL_RESOLVED_CONFIG_PATH")
+    if resolved_config_path:
+        output = Path(resolved_config_path)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        OmegaConf.save(config=config, f=str(output), resolve=True)
+        print(f"Saved resolved Hydra config to {output}")
+
     # Check if Ray is not initialized
     if not ray.is_initialized():
         # Initialize Ray with a local cluster configuration

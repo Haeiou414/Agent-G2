@@ -4,6 +4,8 @@
 </h1>
 <h3 align="center"><em><ins>G</ins>aussian <ins>G</ins>uidance for Agentic Reinforcement Learning</em></h3>
 
+> Independent reproduction track: see [`reproduction/README.md`](reproduction/README.md) for the verified implementation, configuration audit, staged experiment plan, and reporting protocol.
+
 <p align="center">
   <a href="https://arxiv.org/abs/2608.23318"><img alt="Paper" src="https://img.shields.io/badge/arXiv-2608.23318-b31b1b"></a>
   <a href="https://zju-real.github.io/Agent-G2/"><img alt="Project Page" src="https://img.shields.io/badge/Project-Page-blue"></a>

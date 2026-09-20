@@ -1,0 +1,27 @@
+name: reproduction-ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  cpu-verification:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install lightweight test dependency
+        run: python -m pip install numpy
+      - name: Run reproduction tests
+        run: python -m unittest discover -s tests/reproduction -v
+      - name: Validate launchers
+        run: bash -n reproduction/run_alfworld_paper_table5.sh reproduction/run_alfworld_single_gpu.sh
+      - name: Regenerate deterministic artifacts
+        run: |
+          python -m reproduction.audit_config
+          python -m reproduction.analyze_alfworld_data
+          python -m reproduction.render_scheduler_svg
+      - name: Check generated artifacts are current
+        run: git diff --exit-code -- reproduction/reports/config_audit.md reproduction/reports/alfworld_data_audit.md reproduction/figures/scheduler_dynamics.svg reproduction/figures/alfworld_expert_lengths.svg

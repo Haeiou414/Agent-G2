@@ -14,6 +14,7 @@ def targets() -> dict[str, str]:
     return {
         "GitHub": "https://github.com/",
         "Hugging Face": hf_endpoint + "/",
+        "Conda defaults": "https://repo.anaconda.com/pkgs/main/noarch/repodata.json",
         "PyPI": "https://pypi.org/simple/pip/",
         "PyTorch CUDA 12.4": "https://download.pytorch.org/whl/cu124/torch/",
         "ChatGPT": "https://chatgpt.com/",
@@ -38,8 +39,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--timeout", type=float, default=8.0)
     args = parser.parse_args()
-    with ThreadPoolExecutor(max_workers=6) as pool:
-        results = list(pool.map(lambda item: probe(item, args.timeout), targets().items()))
+    routes = targets()
+    with ThreadPoolExecutor(max_workers=len(routes)) as pool:
+        results = list(pool.map(lambda item: probe(item, args.timeout), routes.items()))
     for name, url, status in results:
         print(f"{name:18} {status:36} {url}")
     print("HTTP 401/403 means the route responds, not that login or downloads will succeed.")

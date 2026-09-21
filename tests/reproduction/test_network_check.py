@@ -11,6 +11,9 @@ class NetworkCheckTests(unittest.TestCase):
         with patch.dict(os.environ, {"HF_ENDPOINT": "https://hf-mirror.com/"}):
             self.assertEqual(targets()["Hugging Face"], "https://hf-mirror.com/")
 
+    def test_conda_channel_is_covered(self) -> None:
+        self.assertIn("repo.anaconda.com", targets()["Conda defaults"])
+
     def test_http_auth_error_is_reachable(self) -> None:
         error = HTTPError("https://api.openai.com/v1/models", 401, "Unauthorized", {}, None)
         with patch("reproduction.check_network.urlopen", side_effect=error):

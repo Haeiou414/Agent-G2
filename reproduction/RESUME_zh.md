@@ -7,7 +7,7 @@
 
 可直接使用的两条描述：
 
-- 基于作者开源的 verl/GRPO 训练框架复现 Agent-G² Gaussian Guidance 调度器，将任务成功率 EMA、难度偏置、动态方差与 action-level expert prefix 拆为可独立验证组件，并建立 30 项 CPU 回归测试和 CI。
+- 基于作者开源的 verl/GRPO 训练框架复现 Agent-G² Gaussian Guidance 调度器，将任务成功率 EMA、难度偏置、动态方差与 action-level expert prefix 拆为可独立验证组件，并建立 50 余项 CPU 回归测试和 CI。
 - 审计 3,553 条 ALFWorld 专家轨迹以及论文/代码的 12 个关键配置字段，定位 7 项标量配置差异和 2 项运行时语义差异；用固定 revision 的官方 tokenizer 发现原 token-level 实现在 guidance ratio=0.5 时有 36.0% 轨迹选择了不同动作深度，并修正任务级成功率聚合与前缀边界。
 
 这版强调的是复现工程、论文—代码审计和可验证修正，不应写“复现 95.3%”或“超过 GRPO”，因为本分支还没有产生 GPU 对照结果。

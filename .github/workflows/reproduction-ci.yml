@@ -17,7 +17,7 @@ jobs:
       - name: Run reproduction tests
         run: python -m unittest discover -s tests/reproduction -v
       - name: Validate launchers
-        run: bash -n reproduction/run_alfworld_paper_table5.sh reproduction/run_alfworld_single_gpu.sh
+        run: bash -n reproduction/run_alfworld_paper_table5.sh reproduction/run_alfworld_single_gpu.sh reproduction/run_alfworld_checkpoint_eval.sh reproduction/bootstrap_autodl.sh reproduction/autodl_env.sh
       - name: Regenerate deterministic artifacts
         run: |
           python -m reproduction.audit_config

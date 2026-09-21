@@ -1,10 +1,12 @@
 # 单张 NVIDIA GPU 运行手册
 
-这份手册用于受限预算复现，不宣称等价于论文的单机 8 卡设置。建议使用 Linux、约 24GB 或更高显存、至少 40GiB 剩余磁盘的临时训练机。
+这份手册用于受限预算复现，不宣称等价于论文的单机 8 卡设置。首次租用建议单张 NVIDIA RTX 4090（24GB）做短时试跑；如预算允许，L40/A40 等 48GB 卡更有显存余量。选择 Ubuntu、CUDA 12.4 开发镜像、至少 64GB 主机内存，并为 `/root/autodl-tmp` 准备至少 100GB 数据盘；完整多种子实验预计要扩容，具体以试跑后的 checkpoint 大小为准。24GB 是启动器的设计目标，不是已在 GPU 上验证的显存保证。
+
+不要把 RTX 5090 等 Blackwell 卡与当前 CUDA 12.4 / PyTorch 2.6 / vLLM 0.8.5 固定环境混用；5090 需单独验证 CUDA 12.8+、PyTorch 2.7+ 和相应推理/注意力内核栈。安装脚本会在下载依赖前检查 GPU compute capability 并拒绝此类组合。
 
 ## 1. 创建环境
 
-AutoDL 推荐使用自动入口。它把 ALFWorld 数据、Hugging Face 缓存和 pip 缓存放到 `/root/autodl-tmp/agent-g2-data`，避免占满临时系统盘；安装结束后会自动执行测试和 GPU 自检：
+AutoDL 推荐使用自动入口。它把 Conda 环境与包缓存、ALFWorld 数据、Hugging Face 缓存和 pip 缓存放到 `/root/autodl-tmp/agent-g2-data`，避免占满默认 30GB 系统盘；安装结束后会自动执行测试和 GPU 自检：
 
 ```bash
 cd /root/autodl-tmp/agent-g2-reproduction
@@ -18,6 +20,7 @@ conda activate agent-g2
 如需手动安装，等价步骤如下：
 
 ```bash
+source reproduction/autodl_env.sh
 conda create -n agent-g2 python=3.12 -y
 conda activate agent-g2
 
@@ -76,11 +79,11 @@ python -m reproduction.estimate_rental_budget \
 
 ```bash
 python -m reproduction.download_public_checkpoint \
-  --local-dir /data/models/agent-g2-alfworld-1.5b
+  --local-dir /root/autodl-tmp/agent-g2-data/models/agent-g2-alfworld-1.5b
 
 for seed in 1 2 3; do
   bash reproduction/run_alfworld_checkpoint_eval.sh \
-    /data/models/agent-g2-alfworld-1.5b "$seed"
+    /root/autodl-tmp/agent-g2-data/models/agent-g2-alfworld-1.5b "$seed"
 done
 ```
 

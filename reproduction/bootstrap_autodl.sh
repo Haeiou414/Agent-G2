@@ -22,9 +22,22 @@ if ! command -v conda >/dev/null 2>&1; then
     exit 2
 fi
 
+# The pinned PyTorch 2.6.0+cu124 / vLLM 0.8.5 stack predates Blackwell.
+GPU_COMPUTE_CAP=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | sed -n '1p' | tr -d '[:space:]')
+if ! [[ "$GPU_COMPUTE_CAP" =~ ^[0-9]+\.[0-9]+$ ]]; then
+    echo "cannot verify GPU compute capability with nvidia-smi; refusing to install an unverified CUDA stack" >&2
+    exit 2
+fi
+if (( ${GPU_COMPUTE_CAP%%.*} >= 10 )); then
+    echo "GPU compute capability $GPU_COMPUTE_CAP is Blackwell or newer; this CUDA 12.4 / PyTorch 2.6 recipe is unsupported. Use an Ada/Ampere GPU or a separately validated CUDA 12.8+ stack." >&2
+    exit 2
+fi
+
 # shellcheck source=autodl_env.sh
 source "$ROOT_DIR/reproduction/autodl_env.sh"
 mkdir -p "$SETUP_DIR"
+cd "$ROOT_DIR"
+python3 -m reproduction.check_network > "$SETUP_DIR/network-preflight.txt"
 
 if ! conda run -n "$ENV_NAME" python --version >/dev/null 2>&1; then
     conda create -n "$ENV_NAME" python=3.12 -y

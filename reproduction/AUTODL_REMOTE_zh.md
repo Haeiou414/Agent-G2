@@ -81,6 +81,15 @@ ssh autodl-agent-g2 \
 
 ## 4. 在 AutoDL 安装并登录 Codex
 
+先检查出站网络（无需下载模型）：
+
+```bash
+cd /root/autodl-tmp/agent-g2-reproduction
+python3 -m reproduction.check_network
+```
+
+AutoDL 的学术加速明确覆盖 GitHub 和 Hugging Face，但不保证稳定，也未列出 ChatGPT/OpenAI。如果 GitHub 或 Hugging Face 不通，可在当前 SSH shell 中执行 `source /etc/network_turbo` 后重测；不要据此假定 Codex 也能连通。若 ChatGPT/OpenAI 不通，先不要在远端安装 Codex：保持 Codex 在本机，通过 SSH/rsync 操作训练机，避免把 GPU 租用时间耗在登录排障上。PyPI、PyTorch 下载也必须分别实测。
+
 通过 SSH 登录实例后执行官方 Linux 安装器：
 
 ```bash

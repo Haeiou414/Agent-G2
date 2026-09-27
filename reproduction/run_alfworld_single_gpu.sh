@@ -99,13 +99,14 @@ RUN_SUFFIX=""
 if [[ -n "$RUN_TAG" ]]; then
     RUN_SUFFIX="_${RUN_TAG}"
 fi
+BASE_MODEL_PATH=${BASE_MODEL_PATH:-Qwen/Qwen2.5-1.5B-Instruct}
 RUN_NAME="limited_${METHOD}_qwen2.5_1.5b_seed${SEED}${RUN_SUFFIX}"
 COMMON_OVERRIDES=(
     +data.seed="$SEED"
     data.train_batch_size=4
     data.val_batch_size=64
     data.max_prompt_length=7000
-    actor_rollout_ref.model.path=Qwen/Qwen2.5-1.5B-Instruct
+    actor_rollout_ref.model.path="$BASE_MODEL_PATH"
     actor_rollout_ref.actor.optim.lr=1e-5
     actor_rollout_ref.actor.ppo_mini_batch_size=16
     actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=1

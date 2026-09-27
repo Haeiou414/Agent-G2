@@ -59,6 +59,10 @@ bash reproduction/run_alfworld_paper_table5.sh
 python -m reproduction.download_public_checkpoint --local-dir /data/models/agent-g2-alfworld-1.5b
 bash reproduction/run_alfworld_checkpoint_eval.sh /data/models/agent-g2-alfworld-1.5b 1
 
+# 下载并校验固定 revision 的 Qwen 基础模型；训练时使用本地快照
+python -m reproduction.download_base_model --local-dir /data/models/qwen2.5-1.5b-instruct
+export BASE_MODEL_PATH=/data/models/qwen2.5-1.5b-instruct
+
 # 单张 24GB GPU：同预算运行主方法与两个关键基线
 bash reproduction/run_alfworld_single_gpu.sh gmsv 1
 bash reproduction/run_alfworld_single_gpu.sh grpo 1

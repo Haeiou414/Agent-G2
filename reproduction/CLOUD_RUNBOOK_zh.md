@@ -36,11 +36,23 @@ alfworld-download -f
 ## 2. 环境自检
 
 ```bash
+source reproduction/autodl_env.sh
 python -m reproduction.verify_gpu_environment
 conda run -n agent-g2 python -m unittest discover -s tests/reproduction -v
 ```
 
 自检必须确认：Linux、NVIDIA GPU、约 24GB 显存、CUDA 可被 PyTorch 访问，以及 `torch/vllm/ray/flash-attn/alfworld` 均已安装。
+
+在无卡模式预下载并校验固定 revision 的 Qwen 基础模型，避免 GPU 计费期间等待网络；启动训练前把路径导出给单卡启动器：
+
+```bash
+python -m reproduction.download_base_model \
+  --local-dir "$AGENT_G2_DATA_ROOT/models/qwen2.5-1.5b-instruct" \
+  --max-workers 1
+export BASE_MODEL_PATH="$AGENT_G2_DATA_ROOT/models/qwen2.5-1.5b-instruct"
+```
+
+下载器同时核对权重的精确字节数与 SHA-256；校验失败时不得开始实验。
 
 ## 3. 8-step smoke test
 

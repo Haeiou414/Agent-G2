@@ -91,6 +91,24 @@ class SingleGpuLauncherTests(unittest.TestCase):
         )
         self.assertIn("limited_gmsv_qwen2.5_1.5b_seed7_retry-1", completed.stdout)
 
+    def test_base_model_path_can_use_a_pinned_local_snapshot(self) -> None:
+        env = {
+            **os.environ,
+            "DRY_RUN": "1",
+            "BASE_MODEL_PATH": "/data/models/qwen2.5-1.5b-instruct",
+        }
+        completed = subprocess.run(
+            ["bash", str(LAUNCHER), "gmsv", "7"],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        self.assertIn(
+            "actor_rollout_ref.model.path=/data/models/qwen2.5-1.5b-instruct",
+            completed.stdout,
+        )
+
     def test_unsafe_run_tag_is_rejected(self) -> None:
         completed = subprocess.run(
             ["bash", str(LAUNCHER), "gmsv", "7"],

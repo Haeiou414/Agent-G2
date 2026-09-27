@@ -89,6 +89,10 @@ python -m reproduction.estimate_rental_budget \
 
 ## 4. 核验作者公开 checkpoint
 
+验证启动器把每个 ALFWorld 环境 worker 的 Ray CPU 配额设为 `0.05`。在
+16 核单机上，若沿用上游的 `0.1`，128 个验证环境和 16 个训练占位环境会
+先占用 14.4 核，导致还需要 1 CPU + 1 GPU 的模型 worker 无法调度并永久等待。
+
 公开模型核验与自行训练复现是两条证据链。下载器固定 Hugging Face revision `4556a9bfdf84320267c3a9e9e7b85732ba2835ba`，评测入口强制 `val_only=true`、禁止 validation guidance，并保存 checkpoint identity：
 
 ```bash

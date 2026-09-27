@@ -58,6 +58,10 @@ COMMAND=(
     actor_rollout_ref.ref.fsdp_config.param_offload=true
     env.rollout.n=1
     "env.seed=$SEED"
+    # The 128 validation environments plus 16 train placeholders otherwise
+    # reserve 14.4 of 16 CPUs at the upstream 0.1 default. Ray then cannot
+    # place the 1-CPU/1-GPU model worker and waits forever.
+    env.resources_per_worker.num_cpus=0.05
     gmsv.apply_on_validation=false
     trainer.n_gpus_per_node=1
     trainer.val_before_train=true

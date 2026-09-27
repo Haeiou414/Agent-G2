@@ -26,6 +26,7 @@ class CheckpointEvalLauncherTests(unittest.TestCase):
         self.assertIn("trainer.default_local_dir=outputs/", command)
         self.assertIn("gmsv.apply_on_validation=false", command)
         self.assertIn("env.rollout.n=1", command)
+        self.assertIn("env.resources_per_worker.num_cpus=0.05", command)
         self.assertIn("trainer.logger=\\[console\\,jsonl\\]", command)
 
     def test_missing_checkpoint_is_rejected(self) -> None:

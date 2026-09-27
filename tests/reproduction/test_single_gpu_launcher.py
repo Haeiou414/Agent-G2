@@ -34,6 +34,8 @@ class SingleGpuLauncherTests(unittest.TestCase):
             self.assertIn("data.train_batch_size=4", command)
             self.assertIn("env.rollout.n=4", command)
             self.assertIn("env.resources_per_worker.num_cpus=0.05", command)
+            self.assertIn("actor_rollout_ref.rollout.enforce_eager=true", command)
+            self.assertIn("actor_rollout_ref.rollout.free_cache_engine=true", command)
             self.assertIn("trainer.total_training_steps=80", command)
             self.assertIn("trainer.n_gpus_per_node=1", command)
             self.assertIn("trainer.resume_mode=disable", command)

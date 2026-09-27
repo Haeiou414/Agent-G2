@@ -45,6 +45,8 @@ fi
 
 PYTHON=(conda run -n "$ENV_NAME" python)
 PIP=("${PYTHON[@]}" -m pip)
+export MAX_JOBS=${MAX_JOBS:-4}
+export TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST:-$GPU_COMPUTE_CAP}
 
 "${PIP[@]}" install --upgrade pip wheel packaging ninja
 "${PIP[@]}" install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
@@ -54,14 +56,52 @@ PIP=("${PYTHON[@]}" -m pip)
     vllm==0.8.5 \
     gymnasium==0.29.1 \
     stable-baselines3==2.6.0 \
-    alfworld \
     huggingface_hub
+bash "$ROOT_DIR/reproduction/install_alfworld_autodl.sh"
+"${PIP[@]}" install \
+    wandb==0.19.11 \
+    google-api-core==2.24.2 \
+    proto-plus==1.26.1 \
+    opentelemetry-exporter-prometheus==0.47b0
 
 if [[ ! -d "$ALFWORLD_DATA/json_2.1.1" ]]; then
-    conda run -n "$ENV_NAME" alfworld-download -f
+    conda run -n "$ENV_NAME" alfworld-download || {
+        # ALFWorld's downloader fetches an optional visual detector after all
+        # text-game archives. The text-only reproduction does not need it.
+        if [[ ! -d "$ALFWORLD_DATA/json_2.1.1/train" ||
+              ! -d "$ALFWORLD_DATA/json_2.1.1/valid_seen" ||
+              ! -d "$ALFWORLD_DATA/json_2.1.1/valid_unseen" ||
+              ! -f "$ALFWORLD_DATA/logic/alfred.pddl" ||
+              ! -f "$ALFWORLD_DATA/logic/alfred.twl2" ]]; then
+            echo "ALFWorld text data is incomplete" >&2
+            exit 1
+        fi
+        echo "ALFWorld visual detector download failed; text data is present"
+    }
 fi
+for required in \
+    "$ALFWORLD_DATA/json_2.1.1/train" \
+    "$ALFWORLD_DATA/json_2.1.1/valid_seen" \
+    "$ALFWORLD_DATA/json_2.1.1/valid_unseen" \
+    "$ALFWORLD_DATA/logic/alfred.pddl" \
+    "$ALFWORLD_DATA/logic/alfred.twl2"; do
+    if [[ ! -e "$required" ]]; then
+        echo "ALFWorld text data is incomplete: $required" >&2
+        exit 1
+    fi
+done
 
-"${PIP[@]}" check
+"${PIP[@]}" check > "$SETUP_DIR/pip-check.txt" 2>&1 || {
+    # These two upstream wheels have incorrect platform tags. TextWorld is
+    # separately exercised by the ALFWorld reset/step smoke check; decord is
+    # not used by the text-only ALFWorld reproduction.
+    if grep -Ev '^(decord 0\.6\.0|textworld 1\.7\.0) is not supported on this platform$' \
+        "$SETUP_DIR/pip-check.txt" | grep -q .; then
+        cat "$SETUP_DIR/pip-check.txt" >&2
+        exit 1
+    fi
+    cat "$SETUP_DIR/pip-check.txt"
+}
 conda run -n "$ENV_NAME" python -m unittest discover \
     -s "$ROOT_DIR/tests/reproduction" -v
 

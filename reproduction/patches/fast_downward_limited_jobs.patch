@@ -1,0 +1,11 @@
+--- a/build.py
++++ b/build.py
+@@ -20,7 +20,9 @@ if os.name == "posix":
+     except NotImplementedError:
+         pass
+     else:
+-        DEFAULT_MAKE_PARAMETERS.append('-j{}'.format(num_cpus))
++        # AutoDL no-GPU containers can have 2 GiB of RAM despite many host CPUs.
++        max_jobs = max(1, int(os.environ.get("AGENT_G2_BUILD_JOBS", "1")))
++        DEFAULT_MAKE_PARAMETERS.append('-j{}'.format(min(num_cpus, max_jobs)))
+     CMAKE_GENERATOR = "Unix Makefiles"

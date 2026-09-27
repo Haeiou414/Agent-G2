@@ -11,17 +11,19 @@
 
 ## 1. 在本机准备 SSH 密钥
 
-若 `~/.ssh/id_ed25519.pub` 已存在，可直接复用。否则在 Mac 终端执行：
+当前租用实例已在本机生成专用密钥 `~/.ssh/id_ed25519_autodl_agent_g2`。私钥留在本机；不要把它同步到项目或远端。若在另一台 Mac 上操作，可新建一把专用密钥：
 
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_autodl_agent_g2
 ```
 
 把下面命令显示的**公钥**完整复制到 AutoDL 控制台的“设置密钥登录”：
 
 ```bash
-cat ~/.ssh/id_ed25519.pub
+cat ~/.ssh/id_ed25519_autodl_agent_g2.pub
 ```
+
+在 AutoDL 控制台“容器实例 → 设置密钥登录”保存公钥后，按控制台提示重启实例，再验证免密登录。不要把登录密码或私钥发到聊天中。
 
 开机后，AutoDL 会给出类似下面的命令：
 
@@ -39,8 +41,8 @@ ssh -p 10309 root@connect.nmb1.seetacloud.com
 Host autodl-agent-g2
   HostName connect.nmb1.seetacloud.com
   User root
-  Port 10309
-  IdentityFile ~/.ssh/id_ed25519
+  Port 21437
+  IdentityFile ~/.ssh/id_ed25519_autodl_agent_g2
   IdentitiesOnly yes
   ServerAliveInterval 30
   ServerAliveCountMax 6
@@ -52,7 +54,7 @@ Host autodl-agent-g2
 ssh autodl-agent-g2
 ```
 
-只有这一步能免密码成功，才继续配置 Codex。每次更换 AutoDL 实例或端口后，都要更新这一段。
+`21437` 是当前实例的端口；每次更换 AutoDL 实例或端口后，都要更新这一段。只有这一步能免密码成功，才继续配置 Codex。
 
 ## 3. 同步当前完整工作区
 
@@ -65,14 +67,14 @@ ssh autodl-agent-g2 'mkdir -p /root/autodl-tmp/agent-g2-reproduction'
 然后在本机执行。结尾的两个 `/` 都有意义：
 
 ```bash
-rsync -az --progress \
+rsync -az --no-owner --no-group --progress \
   --exclude '.venv/' \
   --exclude '__pycache__/' \
   /Users/haeiou/.codex/.chatgpt-projects/g-p-6aaf60a42d88819183a7377f489dac83/agent-g2-reproduction/ \
   autodl-agent-g2:/root/autodl-tmp/agent-g2-reproduction/
 ```
 
-不要加 `--delete`，避免误删远程实验输出。验证代码已经到达：
+不要加 `--delete`，避免误删远程实验输出；`--no-owner --no-group` 防止把 Mac 用户的 UID/GID 带到远端，使 Git 拒绝读取仓库。验证代码已经到达：
 
 ```bash
 ssh autodl-agent-g2 \
@@ -140,7 +142,7 @@ Codex 桌面端使用远程登录 shell 启动服务，所以 `command -v codex`
 在本机执行，不使用 `--delete`：
 
 ```bash
-rsync -az --progress \
+rsync -az --no-owner --no-group --progress \
   autodl-agent-g2:/root/autodl-tmp/agent-g2-reproduction/outputs/ \
   /Users/haeiou/.codex/.chatgpt-projects/g-p-6aaf60a42d88819183a7377f489dac83/agent-g2-reproduction/outputs/
 ```

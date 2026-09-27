@@ -13,7 +13,10 @@ REVISION = "4556a9bfdf84320267c3a9e9e7b85732ba2835ba"
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--local-dir", type=Path, required=True)
+    parser.add_argument("--max-workers", type=int, default=2)
     args = parser.parse_args()
+    if args.max_workers < 1:
+        parser.error("--max-workers must be at least 1")
     try:
         from huggingface_hub import snapshot_download
     except ModuleNotFoundError as error:
@@ -22,6 +25,7 @@ def main() -> None:
         repo_id=REPO_ID,
         revision=REVISION,
         local_dir=args.local_dir,
+        max_workers=args.max_workers,
     )
     print(f"downloaded {REPO_ID}@{REVISION} to {output}")
 

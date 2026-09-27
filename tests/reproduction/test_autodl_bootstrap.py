@@ -9,6 +9,7 @@ from reproduction.audit_config import REPO_ROOT
 
 BOOTSTRAP = REPO_ROOT / "reproduction" / "bootstrap_autodl.sh"
 ENV_FILE = REPO_ROOT / "reproduction" / "autodl_env.sh"
+ALFWORLD_INSTALLER = REPO_ROOT / "reproduction" / "install_alfworld_autodl.sh"
 
 
 class AutoDlBootstrapTests(unittest.TestCase):
@@ -22,6 +23,10 @@ class AutoDlBootstrapTests(unittest.TestCase):
             "vllm==0.8.5",
             "gymnasium==0.29.1",
             "stable-baselines3==2.6.0",
+            "wandb==0.19.11",
+            "google-api-core==2.24.2",
+            "proto-plus==1.26.1",
+            "opentelemetry-exporter-prometheus==0.47b0",
         ):
             self.assertIn(expected, script)
 
@@ -31,8 +36,17 @@ class AutoDlBootstrapTests(unittest.TestCase):
         self.assertIn("ALFWORLD_DATA", env_script)
         self.assertIn("HF_HOME", env_script)
         self.assertIn("PIP_CACHE_DIR", env_script)
+        self.assertIn("TMPDIR", env_script)
         self.assertIn("CONDA_ENVS_PATH", env_script)
         self.assertIn("CONDA_PKGS_DIRS", env_script)
+
+    def test_alfworld_build_is_memory_bounded_and_source_verified(self) -> None:
+        installer = ALFWORLD_INSTALLER.read_text(encoding="utf-8")
+        self.assertIn("AGENT_G2_BUILD_JOBS", installer)
+        self.assertIn("sha256sum --check", installer)
+        self.assertIn("fast_downward_limited_jobs.patch", installer)
+        self.assertIn("alfred.pddl", installer)
+        self.assertIn("alfred.twl2", installer)
 
     def test_setup_records_environment_evidence(self) -> None:
         script = BOOTSTRAP.read_text(encoding="utf-8")

@@ -11,9 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Preprocess the Geometry3k dataset to parquet format
-"""
+"""Create placeholder parquet rows that drive agent-environment rollouts."""
 
 import os
 import datasets
@@ -33,18 +31,6 @@ if __name__ == '__main__':
     print(f"processing data for mode: {args.mode}")
     args.local_dir = os.path.join(args.local_dir, args.mode)
 
-    data_source = 'hiyouga/geometry3k'
-    """
-    **NOTE**: This is a frequently asked question.
-    We do NOT use the data in 'hiyouga/geometry3k', instead we only use it to indicate the modality and the data size.
-    See details: https://github.com/langfengQ/verl-agent?tab=readme-ov-file#2-data-preparation
-    """
-
-    dataset = datasets.load_dataset(data_source)
-
-    train_dataset = dataset['train'].select(range(args.train_data_size))
-    test_dataset = dataset['test'].select(range(args.val_data_size))
-
     instruction_following = {
         "visual": "<image>",
         "text": "",
@@ -54,12 +40,10 @@ if __name__ == '__main__':
     def make_map_fn(split):
 
         def process_fn(example, idx):
-            problem = example.pop('problem')
             prompt = instruction_following[args.mode]
-            # answer = example.pop('answer')
-            images = example.pop('images')
 
             if args.mode == 'visual':
+                images = example['images']
                 data = {
                     "data_source": args.mode,
                     "prompt": [{
@@ -90,11 +74,34 @@ if __name__ == '__main__':
 
         return process_fn
 
-    train_dataset = train_dataset.map(function=make_map_fn('train'), with_indices=True, num_proc=8)
-    test_dataset = test_dataset.map(function=make_map_fn('test'), with_indices=True, num_proc=8)
+    if args.mode == 'text':
+        # Text agent environments replace these empty prompts at rollout time.
+        # The former implementation downloaded Geometry3K only to obtain row
+        # counts, even though none of its content was used. Build the exact
+        # placeholder schema locally so ALFWorld runs are deterministic and
+        # do not depend on an unrelated dataset or network access.
+        train_dataset = datasets.Dataset.from_list(
+            [make_map_fn('train')({}, index) for index in range(args.train_data_size)]
+        )
+        test_dataset = datasets.Dataset.from_list(
+            [make_map_fn('test')({}, index) for index in range(args.val_data_size)]
+        )
+    else:
+        dataset = datasets.load_dataset('hiyouga/geometry3k')
+        train_dataset = dataset['train'].select(range(args.train_data_size))
+        test_dataset = dataset['test'].select(range(args.val_data_size))
+        train_dataset = train_dataset.map(
+            function=make_map_fn('train'), with_indices=True, num_proc=8,
+            remove_columns=train_dataset.column_names,
+        )
+        test_dataset = test_dataset.map(
+            function=make_map_fn('test'), with_indices=True, num_proc=8,
+            remove_columns=test_dataset.column_names,
+        )
 
     local_dir = args.local_dir
     hdfs_dir = args.hdfs_dir
+    os.makedirs(local_dir, exist_ok=True)
 
     train_dataset.to_parquet(os.path.join(local_dir, 'train.parquet'))
     test_dataset.to_parquet(os.path.join(local_dir, 'test.parquet'))

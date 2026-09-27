@@ -27,11 +27,13 @@ conda activate agent-g2
 pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
 pip install flash-attn==2.7.4.post1 --no-build-isolation
 pip install -e .
-pip install vllm==0.8.5 transformers==4.51.1 gymnasium==0.29.1 stable-baselines3==2.6.0 alfworld
+pip install vllm==0.8.5 'ray[default]==2.46.0' transformers==4.51.1 gymnasium==0.29.1 stable-baselines3==2.6.0 alfworld
+pip install opentelemetry-api==1.26.0 opentelemetry-sdk==1.26.0 opentelemetry-proto==1.26.0 opentelemetry-exporter-prometheus==0.47b0
 alfworld-download -f
 ```
 
 不要在同一个环境里安装 WebShop；官方仓库要求 WebShop 使用 Python 3.10，本项目第一阶段只复现 ALFWorld。
+Ray 必须固定在 2.46.0：vLLM 0.8.5 要求 OpenTelemetry 1.26.x，而 Ray 2.48 及更高版本的 `default` extra 要求 OpenTelemetry 1.30 及以上，两者无法同时满足。文本占位 parquet 在本地生成，不需要下载与 ALFWorld 无关的 Geometry3K 数据集。
 
 ## 2. 环境自检
 

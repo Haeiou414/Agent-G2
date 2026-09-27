@@ -54,6 +54,7 @@ export TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST:-$GPU_COMPUTE_CAP}
 "${PIP[@]}" install -e "$ROOT_DIR"
 "${PIP[@]}" install \
     vllm==0.8.5 \
+    'ray[default]==2.46.0' \
     transformers==4.51.1 \
     gymnasium==0.29.1 \
     stable-baselines3==2.6.0 \
@@ -63,6 +64,9 @@ bash "$ROOT_DIR/reproduction/install_alfworld_autodl.sh"
     wandb==0.19.11 \
     google-api-core==2.24.2 \
     proto-plus==1.26.1 \
+    opentelemetry-api==1.26.0 \
+    opentelemetry-sdk==1.26.0 \
+    opentelemetry-proto==1.26.0 \
     opentelemetry-exporter-prometheus==0.47b0
 
 if [[ ! -d "$ALFWORLD_DATA/json_2.1.1" ]]; then

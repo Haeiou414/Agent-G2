@@ -21,12 +21,16 @@ class AutoDlBootstrapTests(unittest.TestCase):
             "cu124",
             "flash-attn==2.7.4.post1",
             "vllm==0.8.5",
+            "ray[default]==2.46.0",
             "transformers==4.51.1",
             "gymnasium==0.29.1",
             "stable-baselines3==2.6.0",
             "wandb==0.19.11",
             "google-api-core==2.24.2",
             "proto-plus==1.26.1",
+            "opentelemetry-api==1.26.0",
+            "opentelemetry-sdk==1.26.0",
+            "opentelemetry-proto==1.26.0",
             "opentelemetry-exporter-prometheus==0.47b0",
         ):
             self.assertIn(expected, script)
@@ -40,6 +44,7 @@ class AutoDlBootstrapTests(unittest.TestCase):
         self.assertIn("TMPDIR", env_script)
         self.assertIn("CONDA_ENVS_PATH", env_script)
         self.assertIn("CONDA_PKGS_DIRS", env_script)
+        self.assertIn("OMP_NUM_THREADS", env_script)
 
     def test_alfworld_build_is_memory_bounded_and_source_verified(self) -> None:
         installer = ALFWORLD_INSTALLER.read_text(encoding="utf-8")

@@ -119,6 +119,10 @@ COMMON_OVERRIDES=(
     actor_rollout_ref.ref.fsdp_config.param_offload=true
     env.rollout.n=4
     "env.seed=$SEED"
+    # Leave at least one whole CPU available for Ray's colocated GPU worker.
+    # The upstream recipe prepares 128 validation environments even when the
+    # deprecated val_batch_size override is smaller.
+    env.resources_per_worker.num_cpus=0.05
     trainer.n_gpus_per_node=1
     trainer.total_training_steps=80
     trainer.test_freq=10

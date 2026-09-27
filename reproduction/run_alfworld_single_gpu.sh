@@ -113,7 +113,9 @@ COMMON_OVERRIDES=(
     actor_rollout_ref.actor.fsdp_config.param_offload=true
     actor_rollout_ref.actor.fsdp_config.optimizer_offload=true
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=1
-    actor_rollout_ref.rollout.gpu_memory_utilization=0.35
+    # 0.35 leaves no KV-cache block after the 1.5B actor is initialized on a
+    # 24 GB RTX 4090. 0.50 was verified by the released-checkpoint evaluation.
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.50
     # verl forbids CUDA graph capture together with free_cache_engine. Eager
     # mode lets training release vLLM's cache before the FSDP update.
     actor_rollout_ref.rollout.enforce_eager=true

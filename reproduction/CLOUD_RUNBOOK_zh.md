@@ -27,7 +27,7 @@ conda activate agent-g2
 pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
 pip install flash-attn==2.7.4.post1 --no-build-isolation
 pip install -e .
-pip install vllm==0.8.5 gymnasium==0.29.1 stable-baselines3==2.6.0 alfworld
+pip install vllm==0.8.5 transformers==4.51.1 gymnasium==0.29.1 stable-baselines3==2.6.0 alfworld
 alfworld-download -f
 ```
 

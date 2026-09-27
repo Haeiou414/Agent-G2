@@ -54,6 +54,7 @@ export TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST:-$GPU_COMPUTE_CAP}
 "${PIP[@]}" install -e "$ROOT_DIR"
 "${PIP[@]}" install \
     vllm==0.8.5 \
+    transformers==4.51.1 \
     gymnasium==0.29.1 \
     stable-baselines3==2.6.0 \
     huggingface_hub

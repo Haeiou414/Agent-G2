@@ -21,6 +21,7 @@ class AutoDlBootstrapTests(unittest.TestCase):
             "cu124",
             "flash-attn==2.7.4.post1",
             "vllm==0.8.5",
+            "transformers==4.51.1",
             "gymnasium==0.29.1",
             "stable-baselines3==2.6.0",
             "wandb==0.19.11",

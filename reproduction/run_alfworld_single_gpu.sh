@@ -100,6 +100,12 @@ if [[ -n "$RUN_TAG" ]]; then
     RUN_SUFFIX="_${RUN_TAG}"
 fi
 BASE_MODEL_PATH=${BASE_MODEL_PATH:-Qwen/Qwen2.5-1.5B-Instruct}
+LORA_RANK=${LORA_RANK:-16}
+LORA_ALPHA=${LORA_ALPHA:-$LORA_RANK}
+if ! [[ "$LORA_RANK" =~ ^[0-9]+$ ]] || ! [[ "$LORA_ALPHA" =~ ^[0-9]+$ ]]; then
+    echo "LORA_RANK and LORA_ALPHA must be non-negative integers" >&2
+    exit 2
+fi
 RUN_NAME="limited_${METHOD}_qwen2.5_1.5b_seed${SEED}${RUN_SUFFIX}"
 COMMON_OVERRIDES=(
     +data.seed="$SEED"
@@ -107,6 +113,8 @@ COMMON_OVERRIDES=(
     data.val_batch_size=64
     data.max_prompt_length=7000
     actor_rollout_ref.model.path="$BASE_MODEL_PATH"
+    actor_rollout_ref.model.lora_rank="$LORA_RANK"
+    actor_rollout_ref.model.lora_alpha="$LORA_ALPHA"
     actor_rollout_ref.actor.optim.lr=1e-5
     actor_rollout_ref.actor.ppo_mini_batch_size=16
     actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=1

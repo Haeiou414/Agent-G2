@@ -66,6 +66,7 @@ from codetiming import Timer
 import torch.distributed as dist
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from peft import PeftModel
+from peft.utils.save_and_load import get_peft_model_state_dict
 from safetensors.torch import save_file
 from dataclasses import asdict
 import json
@@ -796,7 +797,22 @@ class ActorRolloutRefWorker(Worker):
             try:
                 if isinstance(self.actor_module_fsdp, FSDP):
                     self.actor_module_fsdp = self.actor_module_fsdp.cuda()
-                    lora_params = layered_summon_lora_params(self.actor_module_fsdp)
+                    if self.world_size == 1:
+                        # FSDP falls back to NO_SHARD on one GPU. The layered
+                        # collector only visits nested sharded modules and
+                        # therefore returned an empty 16-byte safetensors file.
+                        with FSDP.summon_full_params(self.actor_module_fsdp, writeback=False):
+                            lora_params = get_peft_model_state_dict(
+                                self.actor_module_fsdp._fsdp_wrapped_module
+                            )
+                            lora_params = {
+                                name: param.detach().cpu().contiguous()
+                                for name, param in lora_params.items()
+                            }
+                    else:
+                        lora_params = layered_summon_lora_params(self.actor_module_fsdp)
+                    if not lora_params:
+                        raise RuntimeError("LoRA adapter state is empty")
                     if dist.get_rank() == 0:
                         save_file(lora_params, os.path.join(lora_save_path, "adapter_model.safetensors"))
                         with open(os.path.join(lora_save_path, "adapter_config.json"), "w", encoding='utf-8') as f:

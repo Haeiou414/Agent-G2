@@ -14,8 +14,12 @@ from typing import Any, Iterable
 
 BUDGET_KEYS = (
     "actor_rollout_ref.model.path",
+    "actor_rollout_ref.model.lora_rank",
+    "actor_rollout_ref.model.lora_alpha",
     "data.train_batch_size",
     "data.max_prompt_length",
+    "data.max_response_length",
+    "env.max_steps",
     "env.rollout.n",
     "trainer.n_gpus_per_node",
     "trainer.total_training_steps",

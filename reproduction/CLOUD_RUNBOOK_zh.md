@@ -58,21 +58,17 @@ export BASE_MODEL_PATH="$AGENT_G2_DATA_ROOT/models/qwen2.5-1.5b-instruct"
 
 ## 3. 8-step smoke test
 
-先只运行主方法，验证环境交互、rollout、策略更新、验证和 checkpoint 全链路：
+先只运行主方法，验证环境交互、rollout、策略更新、验证和 checkpoint 全链路。专用 smoke 入口使用已在 24GB RTX 4090 上验证的 LoRA rank 16、5 个环境步上限、8 个优化步骤，并只在末步对 16 个任务验证：
 
 ```bash
-bash reproduction/run_alfworld_single_gpu.sh gmsv 1 vllm \
-  trainer.total_training_steps=8 \
-  trainer.test_freq=4 \
-  trainer.save_freq=8 \
-  data.val_batch_size=16
+bash reproduction/run_alfworld_smoke.sh 1
 ```
 
 验收条件：
 
 - 训练至少完成 8 个 optimizer steps；
 - 日志出现 `mu_global`、各 difficulty group 的 `A_k/V_k/sigma_k`；
-- step 4 和 step 8 能完成 validation；
+- step 8 能完成 16-task validation；
 - checkpoint 中存在 `gmsv_runtime_state.json`；
 - 不出现 expert trajectory unmatched 或 prefix replay 错误。
 
@@ -108,6 +104,8 @@ done
 这组结果只能写成“核验作者公开 checkpoint”，不能写成“自行训练达到”。公开 model card 没有说明其 95.3% 对应的具体 checkpoint selection step，所以报告中必须保留这一限制。
 
 ## 5. 同预算主实验
+
+24GB 单卡入口默认采用 LoRA rank 16。单卡 full-parameter 训练可完成 rollout 与 backward，但 AdamW 第一次创建全参数状态时会超过 24GB；因此下列结果属于 L2 LoRA 受限算力复现，不应表述成论文的 8-GPU full-parameter 结果。可通过同一组 `LORA_RANK`/`LORA_ALPHA` 环境变量调整所有方法，但不得混合汇总不同 LoRA 预算。
 
 三个方法必须使用同一台机器、同一份代码和同样的额外 overrides：
 

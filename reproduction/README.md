@@ -63,7 +63,8 @@ bash reproduction/run_alfworld_checkpoint_eval.sh /data/models/agent-g2-alfworld
 python -m reproduction.download_base_model --local-dir /data/models/qwen2.5-1.5b-instruct
 export BASE_MODEL_PATH=/data/models/qwen2.5-1.5b-instruct
 
-# 单张 24GB GPU：同预算运行主方法与两个关键基线
+# 单张 24GB GPU：默认 LoRA rank 16，同预算运行主方法与两个关键基线
+bash reproduction/run_alfworld_smoke.sh 1
 bash reproduction/run_alfworld_single_gpu.sh gmsv 1
 bash reproduction/run_alfworld_single_gpu.sh grpo 1
 bash reproduction/run_alfworld_single_gpu.sh target_acc 1
@@ -101,7 +102,7 @@ AutoDL 环境可通过 `bash reproduction/bootstrap_autodl.sh` 一键初始化�
 
 汇总器只接受 `run_status=completed`、退出码为 0，且在预期最终 step 写有 `val/success_rate` 的运行。不同 `git commit + diff hash`、专家数据 hash 或核心预算字段会直接报错，而不是生成不可比表格。这里的 expert mismatch 指训练任务未匹配到公开专家轨迹的加权比例；训练 rollout 数不包含验证 episodes。
 
-单卡入口默认使用 Qwen2.5-1.5B、4 tasks/step、4 rollouts/task 和 80 个优化步骤，并通过 optimizer/parameter offload 与较小 micro-batch 适配 24GB 显存。三种方法共用完全相同的预算；若机器仍然 OOM，可把额外 Hydra override 追加在命令末尾，但必须对所有方法同步修改。
+单卡入口默认使用 Qwen2.5-1.5B、LoRA rank 16、4 tasks/step、4 rollouts/task 和 80 个优化步骤，并通过 optimizer/parameter offload 与较小 micro-batch 适配 24GB 显存。实测表明单卡 full-parameter AdamW 在第一次创建优化器状态时超过 RTX 4090 的 24GB 显存，因此 L2 结果必须标注为 LoRA 受限算力复现；论文原始单机 8-GPU full-parameter recipe 仍由 `run_alfworld_paper_table5.sh` 保留。所有方法共用完全相同的 LoRA 与 rollout 预算；参数变更必须同步应用到全部方法。
 
 ## 项目边界
 

@@ -37,6 +37,8 @@ class SingleGpuLauncherTests(unittest.TestCase):
             self.assertIn("actor_rollout_ref.rollout.enforce_eager=true", command)
             self.assertIn("actor_rollout_ref.rollout.free_cache_engine=true", command)
             self.assertIn("actor_rollout_ref.rollout.gpu_memory_utilization=0.50", command)
+            self.assertIn("actor_rollout_ref.model.lora_rank=16", command)
+            self.assertIn("actor_rollout_ref.model.lora_alpha=16", command)
             self.assertIn("trainer.total_training_steps=80", command)
             self.assertIn("trainer.n_gpus_per_node=1", command)
             self.assertIn("trainer.resume_mode=disable", command)
@@ -112,6 +114,23 @@ class SingleGpuLauncherTests(unittest.TestCase):
             "actor_rollout_ref.model.path=/data/models/qwen2.5-1.5b-instruct",
             completed.stdout,
         )
+
+    def test_lora_budget_can_be_overridden_explicitly(self) -> None:
+        env = {
+            **os.environ,
+            "DRY_RUN": "1",
+            "LORA_RANK": "32",
+            "LORA_ALPHA": "64",
+        }
+        completed = subprocess.run(
+            ["bash", str(LAUNCHER), "gmsv", "7"],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        self.assertIn("actor_rollout_ref.model.lora_rank=32", completed.stdout)
+        self.assertIn("actor_rollout_ref.model.lora_alpha=64", completed.stdout)
 
     def test_unsafe_run_tag_is_rejected(self) -> None:
         completed = subprocess.run(

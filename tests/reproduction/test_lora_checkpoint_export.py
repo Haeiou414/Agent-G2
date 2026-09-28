@@ -11,6 +11,9 @@ class LoraCheckpointExportTests(unittest.TestCase):
         )
         self.assertIn("if self.world_size == 1:", source)
         self.assertIn("get_peft_model_state_dict(", source)
+        self.assertIn("state_dict=checkpoint_state", source)
+        self.assertIn("mmap=True", source)
+        self.assertIn("weights_only=True", source)
         self.assertIn('raise RuntimeError("LoRA adapter state is empty")', source)
 
 

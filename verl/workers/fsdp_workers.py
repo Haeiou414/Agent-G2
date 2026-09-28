@@ -794,21 +794,37 @@ class ActorRolloutRefWorker(Worker):
                 peft_config['task_type'] = peft_config['task_type'].value
                 peft_config['peft_type'] = peft_config['peft_type'].value
                 peft_config['target_modules'] = list(peft_config['target_modules'])
+            lora_params = {}
             try:
                 if isinstance(self.actor_module_fsdp, FSDP):
                     self.actor_module_fsdp = self.actor_module_fsdp.cuda()
                     if self.world_size == 1:
                         # FSDP falls back to NO_SHARD on one GPU. The layered
-                        # collector only visits nested sharded modules and
-                        # therefore returned an empty 16-byte safetensors file.
-                        with FSDP.summon_full_params(self.actor_module_fsdp, writeback=False):
-                            lora_params = get_peft_model_state_dict(
-                                self.actor_module_fsdp._fsdp_wrapped_module
-                            )
-                            lora_params = {
-                                name: param.detach().cpu().contiguous()
-                                for name, param in lora_params.items()
-                            }
+                        # collector only visits nested sharded modules. Calling
+                        # PeftModel.state_dict() through the NO_SHARD wrapper is
+                        # also empty in torch 2.6. The durable rank-0 checkpoint
+                        # written just above contains the complete PEFT keys, so
+                        # give that state dict explicitly to PEFT's canonical
+                        # filtering/adapter-name conversion routine.
+                        model_path = os.path.join(
+                            local_path,
+                            f"model_world_size_{self.world_size}_rank_{self.rank}.pt",
+                        )
+                        checkpoint_state = torch.load(
+                            model_path,
+                            map_location="cpu",
+                            mmap=True,
+                            weights_only=True,
+                        )
+                        lora_params = get_peft_model_state_dict(
+                            self.actor_module,
+                            state_dict=checkpoint_state,
+                        )
+                        lora_params = {
+                            name: param.detach().cpu().contiguous()
+                            for name, param in lora_params.items()
+                        }
+                        del checkpoint_state
                     else:
                         lora_params = layered_summon_lora_params(self.actor_module_fsdp)
                     if not lora_params:
@@ -820,9 +836,8 @@ class ActorRolloutRefWorker(Worker):
             except Exception as e:
                 if dist.get_rank() == 0:
                     print(f"[rank-{self.rank}]: Save LoRA Adapter Error ({e})")
-
             dist.barrier()
-            if dist.get_rank() == 0:
+            if dist.get_rank() == 0 and lora_params:
                 print(f"[rank-{self.rank}]: Saved LoRA adapter to: {lora_save_path}")
 
         if self._is_offload_param:

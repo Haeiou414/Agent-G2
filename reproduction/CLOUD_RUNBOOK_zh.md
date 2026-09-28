@@ -111,14 +111,12 @@ done
 
 每个正式运行会在 step 40 和 step 80 保存，但 `max_actor_ckpt_to_keep=1` 会在最终 checkpoint 安全写入后删除同一运行的旧恢复点。因此每个 method/seed 最终约保留 7 GB，而不是 14 GB。实测数据盘为 150 GB、当前可用 113 GB，足够保留三方法 × 三种子及现有 smoke；完整 18-run 消融矩阵仍应扩容，或在逐项核验并备份 adapter/manifest 后再清理旧主 checkpoint。
 
-三个方法必须使用同一台机器、同一份代码和同样的额外 overrides：
+三个方法必须使用同一台机器、同一份代码和同样的额外 overrides。推荐使用批次入口；它会先检查 clean Git、GPU 环境和全部目标目录，再顺序启动，任一运行失败就停止：
 
 ```bash
-for seed in 1 2 3; do
-  RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh grpo "$seed"
-  RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh target_acc "$seed"
-  RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh gmsv "$seed"
-done
+RUN_TAG=l2-v1 bash reproduction/run_alfworld_l2_cohort.sh primary 1
+# seed 1 趋势确认后：
+RUN_TAG=l2-v1 bash reproduction/run_alfworld_l2_cohort.sh primary 2 3
 
 python -m reproduction.summarize_results --run-glob '*_l2-v1'
 ```
@@ -130,11 +128,7 @@ python -m reproduction.summarize_results --run-glob '*_l2-v1'
 三项关键消融沿用相同入口与预算。`fixed_sigma` 严格使用论文 Table 3 的 `sigma_min=0.1`，而不是仓库默认的 `0.25`：
 
 ```bash
-for seed in 1 2 3; do
-  RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh fixed_sigma "$seed"
-  RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh no_aux_sft "$seed"
-  RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh deterministic_mean "$seed"
-done
+RUN_TAG=l2-v1 bash reproduction/run_alfworld_l2_cohort.sh ablations 1 2 3
 ```
 
 ## 6. 必须保存的证据

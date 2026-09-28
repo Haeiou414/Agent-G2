@@ -1,0 +1,19 @@
+{
+  "loaded_global_step": 9,
+  "train_batches_completed": 0,
+  "mu_global": 1.0,
+  "scoreboard": {
+    "1": {
+      "accuracy_ema": 0.09112381181716922,
+      "variance_ema": 0.0
+    },
+    "2": {
+      "accuracy_ema": 0.021333333969116214,
+      "variance_ema": 0.00711111068725586
+    },
+    "3": {
+      "accuracy_ema": 0.0,
+      "variance_ema": 0.0
+    }
+  }
+}

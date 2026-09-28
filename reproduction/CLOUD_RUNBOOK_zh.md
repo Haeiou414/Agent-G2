@@ -1,6 +1,6 @@
 # 单张 NVIDIA GPU 运行手册
 
-这份手册用于受限预算复现，不宣称等价于论文的单机 8 卡设置。首次租用建议单张 NVIDIA RTX 4090（24GB）做短时试跑；如预算允许，L40/A40 等 48GB 卡更有显存余量。选择 Ubuntu、CUDA 12.4 开发镜像、至少 64GB 主机内存，并为 `/root/autodl-tmp` 准备至少 100GB 数据盘；完整多种子实验预计要扩容，具体以试跑后的 checkpoint 大小为准。24GB 是启动器的设计目标，不是已在 GPU 上验证的显存保证。
+这份手册用于受限预算复现，不宣称等价于论文的单机 8 卡设置。单张 NVIDIA RTX 4090（24GB）已经完成 LoRA rank 16 的 8-step 训练、验证、checkpoint 与断点续训；如预算允许，L40/A40 等 48GB 卡仍有更大显存余量。选择 Ubuntu、CUDA 12.4 开发镜像、至少 64GB 主机内存，并为 `/root/autodl-tmp` 准备至少 100GB 数据盘；完整多种子实验预计要扩容，具体以 checkpoint 数量为准。24GB 验证只覆盖 LoRA 受限算力配置，不覆盖 full-parameter AdamW。
 
 不要把 RTX 5090 等 Blackwell 卡与当前 CUDA 12.4 / PyTorch 2.6 / vLLM 0.8.5 固定环境混用；5090 需单独验证 CUDA 12.8+、PyTorch 2.7+ 和相应推理/注意力内核栈。安装脚本会在下载依赖前检查 GPU compute capability 并拒绝此类组合。
 
@@ -15,7 +15,7 @@ source reproduction/autodl_env.sh
 conda activate agent-g2
 ```
 
-每个新的 SSH 或 tmux shell 都要重新 `source reproduction/autodl_env.sh`。环境证据保存在 `outputs/setup/`。
+安装和手动诊断时仍建议 `source reproduction/autodl_env.sh`。训练与 checkpoint 评测启动器会自行加载该文件，并在 ALFWorld 数据目录缺失时立即失败；因此 AutoDL 关机重启后不会因 `ALFWORLD_DATA` 丢失而在零游戏集合上无限占用 CPU。环境证据保存在 `outputs/setup/`。
 
 如需手动安装，等价步骤如下：
 
@@ -72,12 +72,14 @@ bash reproduction/run_alfworld_smoke.sh 1
 - checkpoint 中存在 `gmsv_runtime_state.json`；
 - 不出现 expert trajectory unmatched 或 prefix replay 错误。
 
+本项目已在 RTX 4090 24GB 上完成一次 8-step smoke：8 个指标行、step 8 validation、checkpoint 和 `gmsv_runtime_state.json` 均成功，端到端耗时 1026.95 秒。它只证明训练链路和显存可行，不是性能结果。详细证据见 `reports/gpu_smoke_report.md`。
+
 smoke test 完成后，用 AutoDL 页面显示的实例每小时价格估算余额。该工具只读取这台机器的实测 manifest 与逐步 timing，不套用论文 8 卡速度：
 
 ```bash
 python -m reproduction.estimate_rental_budget \
-  --smoke-run outputs/limited_gmsv_qwen2.5_1.5b_seed1 \
-  --hourly-price 2.50 \
+  --smoke-run outputs/limited_gmsv_qwen2.5_1.5b_seed1_smoke5-lora \
+  --hourly-price 1.88 \
   --output reproduction/reports/autodl_budget.md
 ```
 
@@ -151,8 +153,9 @@ done
 
 保持实验定义不变，依次尝试：
 
-1. 将 `actor_rollout_ref.rollout.gpu_memory_utilization` 从 `0.35` 降到 `0.30`；
-2. 保持 micro-batch 为 1，确认 parameter/optimizer offload 已开启；
-3. 开启 activation offload；
-4. 三种方法共同降低 `data.max_prompt_length`，并在报告中注明偏离论文配置；
-5. 最后才共同降低 tasks/step 或 rollouts/task，因为这会改变训练统计和实验定义。
+1. 保持已验证的 vLLM `gpu_memory_utilization=0.50`；在 1.5B 模型上降到 `0.35` 会使 KV cache 无可用 block，而不是节省出可训练配置；
+2. 保持 micro-batch 为 1，确认 parameter/optimizer offload 与 `free_cache_engine=true` 已开启；
+3. 确认 `enforce_eager=true`，因为 verl/vLLM 不允许 CUDA graph 与 `free_cache_engine` 同时使用；
+4. 开启 activation offload；
+5. 三种方法共同降低 `data.max_prompt_length`，并在报告中注明偏离论文配置；
+6. 最后才共同降低 tasks/step 或 rollouts/task，因为这会改变训练统计和实验定义。

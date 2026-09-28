@@ -71,7 +71,7 @@
 - [x] 保存逐步 JSONL 指标、运行 provenance、退出状态与 GPU-hours。
 - [x] 实现结果汇总门禁，拒绝失败运行或代码、数据、预算不一致的对照。
 - [x] 准备中文项目入口、结果模板、简历与面试材料。
-- [ ] 在 NVIDIA GPU 上完成 LoRA smoke test（8 steps；运行中）。
+- [x] 在 RTX 4090 24GB 上完成 LoRA smoke test（8 steps、validation、checkpoint、断点续训与适配器重载）。
 - [ ] 跑完最小实验矩阵和 3 seeds。
 - [ ] 用真实 GPU 日志生成结果表、失败分析与英文摘要。
 

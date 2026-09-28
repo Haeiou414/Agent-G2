@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "artifact": "adapter_model.safetensors",
+  "bytes": 73911112,
+  "sha256": "d779ef681f15622cd0b05be409805bf1b7def6a44cdcecde45791d035fce1b32",
+  "tensor_count": 392,
+  "parameter_count": 18464768,
+  "nonzero_parameter_count": 18464768,
+  "peft_reload_verified": true,
+  "verification": "PeftModel.from_pretrained(base_model, adapter_dir)"
+}

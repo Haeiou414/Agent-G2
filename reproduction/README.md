@@ -18,6 +18,8 @@
 - 通过 CPU CI 自动运行测试并验证审计报告与图表没有漂移。
 - 每次单卡实验自动保存命令、代码状态、依赖、GPU provenance、完整控制台日志、逐步指标和退出状态。
 - 自动剔除失败/不完整运行，并拒绝混合不同代码、数据或预算的结果汇总。
+- 在单张 RTX 4090 24GB 上完成 8-step LoRA 端到端 smoke test，并从 step 8 成功续训到 step 9。
+- 验证主断点包含 18,464,768 个非零 LoRA 参数；导出的 73.9 MB PEFT adapter 可重新加载。
 
 ![Agent-G² scheduler dynamics](figures/scheduler_dynamics.svg)
 
@@ -85,6 +87,7 @@ python -m reproduction.summarize_results
 AutoDL 的 SSH、工作区同步与 Codex 远程项目配置见 [`AUTODL_REMOTE_zh.md`](AUTODL_REMOTE_zh.md)。
 AutoDL 环境可通过 `bash reproduction/bootstrap_autodl.sh` 一键初始化，并把大体积缓存固定到数据盘。
 8-step smoke test 完成后，可用 `python -m reproduction.estimate_rental_budget` 按实测耗时估算主实验与完整消融的租用预算。
+本次 RTX 4090 实测证据与限制见 [`reports/gpu_smoke_report.md`](reports/gpu_smoke_report.md)，80-step 顺序运行预算见 [`reports/autodl_budget.md`](reports/autodl_budget.md)。
 当前可用的简历表述、GPU 完成后的升级模板与面试讲法见 [`RESUME_zh.md`](RESUME_zh.md)。
 
 ## GPU 实验验收

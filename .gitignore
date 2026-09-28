@@ -131,6 +131,8 @@ outputs
 data/
 .tmp
 *ports
+!reproduction/reports/
+!reproduction/reports/*.md
 
 # local experiment artifacts
 /checkpoints/

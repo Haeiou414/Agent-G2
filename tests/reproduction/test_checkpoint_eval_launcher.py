@@ -11,6 +11,11 @@ LAUNCHER = REPO_ROOT / "reproduction" / "run_alfworld_checkpoint_eval.sh"
 
 
 class CheckpointEvalLauncherTests(unittest.TestCase):
+    def test_launcher_restores_and_validates_alfworld_data_after_restart(self):
+        text = LAUNCHER.read_text()
+        self.assertIn('source "$ROOT_DIR/reproduction/autodl_env.sh"', text)
+        self.assertIn('$ALFWORLD_DATA/json_2.1.1/train', text)
+
     def test_dry_run_disables_training_resume_and_validation_guidance(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             completed = subprocess.run(

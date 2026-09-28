@@ -30,6 +30,11 @@ fi
 ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 CHECKPOINT_DIR=$(cd "$CHECKPOINT_DIR" && pwd)
 cd "$ROOT_DIR"
+# Instance restarts clear exported variables.  Resolve the persistent
+# ALFWorld location on every invocation instead of relying on login-shell
+# state; an unresolved path makes TextWorld spin forever over zero games.
+# shellcheck source=autodl_env.sh
+source "$ROOT_DIR/reproduction/autodl_env.sh"
 RUN_TAG=${RUN_TAG:-}
 if [[ -n "$RUN_TAG" ]] && ! [[ "$RUN_TAG" =~ ^[A-Za-z0-9._-]+$ ]]; then
     echo "RUN_TAG may contain only letters, digits, dot, underscore, and hyphen" >&2
@@ -77,6 +82,12 @@ if [[ "${DRY_RUN:-0}" == "1" ]]; then
     printf '%q ' "${COMMAND[@]}"
     printf '\n'
     exit 0
+fi
+
+if [[ ! -d "$ALFWORLD_DATA/json_2.1.1/train" ]]; then
+    echo "ALFWorld training data is missing: $ALFWORLD_DATA/json_2.1.1/train" >&2
+    echo "run: bash reproduction/install_alfworld_autodl.sh" >&2
+    exit 2
 fi
 
 RUN_DIR="outputs/$RUN_NAME"

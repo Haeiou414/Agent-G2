@@ -9,6 +9,11 @@ LAUNCHER = REPO_ROOT / "reproduction" / "run_alfworld_single_gpu.sh"
 
 
 class SingleGpuLauncherTests(unittest.TestCase):
+    def test_launcher_restores_and_validates_alfworld_data_after_restart(self):
+        text = LAUNCHER.read_text()
+        self.assertIn('source "$ROOT_DIR/reproduction/autodl_env.sh"', text)
+        self.assertIn('$ALFWORLD_DATA/json_2.1.1/train', text)
+
     def dry_run(self, method: str, seed: int = 7) -> str:
         env = dict(os.environ)
         env["DRY_RUN"] = "1"

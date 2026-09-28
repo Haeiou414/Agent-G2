@@ -26,6 +26,11 @@ fi
 
 ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT_DIR"
+# AutoDL does not preserve exported shell variables across an instance
+# restart.  Load the persistent data locations for every run so TextWorld
+# never sees the literal, unresolved $ALFWORLD_DATA path.
+# shellcheck source=autodl_env.sh
+source "$ROOT_DIR/reproduction/autodl_env.sh"
 
 case "$METHOD" in
     gmsv)
@@ -162,6 +167,12 @@ if [[ "${DRY_RUN:-0}" == "1" ]]; then
     printf '%q ' "${COMMAND[@]}"
     printf '\n'
     exit 0
+fi
+
+if [[ ! -d "$ALFWORLD_DATA/json_2.1.1/train" ]]; then
+    echo "ALFWorld training data is missing: $ALFWORLD_DATA/json_2.1.1/train" >&2
+    echo "run: bash reproduction/install_alfworld_autodl.sh" >&2
+    exit 2
 fi
 
 RUN_DIR="outputs/$RUN_NAME"

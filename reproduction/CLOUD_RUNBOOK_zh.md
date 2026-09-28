@@ -109,6 +109,8 @@ done
 
 24GB 单卡入口默认采用 LoRA rank 16。单卡 full-parameter 训练可完成 rollout 与 backward，但 AdamW 第一次创建全参数状态时会超过 24GB；因此下列结果属于 L2 LoRA 受限算力复现，不应表述成论文的 8-GPU full-parameter 结果。可通过同一组 `LORA_RANK`/`LORA_ALPHA` 环境变量调整所有方法，但不得混合汇总不同 LoRA 预算。
 
+每个正式运行会在 step 40 和 step 80 保存，但 `max_actor_ckpt_to_keep=1` 会在最终 checkpoint 安全写入后删除同一运行的旧恢复点。因此每个 method/seed 最终约保留 7 GB，而不是 14 GB。实测数据盘为 150 GB、当前可用 113 GB，足够保留三方法 × 三种子及现有 smoke；完整 18-run 消融矩阵仍应扩容，或在逐项核验并备份 adapter/manifest 后再清理旧主 checkpoint。
+
 三个方法必须使用同一台机器、同一份代码和同样的额外 overrides：
 
 ```bash

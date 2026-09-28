@@ -45,6 +45,7 @@ class SingleGpuLauncherTests(unittest.TestCase):
             self.assertIn("actor_rollout_ref.model.lora_rank=16", command)
             self.assertIn("actor_rollout_ref.model.lora_alpha=16", command)
             self.assertIn("trainer.total_training_steps=80", command)
+            self.assertIn("trainer.max_actor_ckpt_to_keep=1", command)
             self.assertIn("trainer.n_gpus_per_node=1", command)
             self.assertIn("trainer.resume_mode=disable", command)
             self.assertIn("trainer.default_local_dir=outputs/", command)

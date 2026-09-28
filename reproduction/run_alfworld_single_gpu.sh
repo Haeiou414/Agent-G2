@@ -145,6 +145,10 @@ COMMON_OVERRIDES=(
     trainer.total_training_steps=80
     trainer.test_freq=10
     trainer.save_freq=40
+    # Keep the step-40 recovery point until step 80 is safely written, then
+    # retain only the final ~7 GB full checkpoint. This makes the 3x3 primary
+    # matrix fit on the verified 150 GB AutoDL data disk.
+    trainer.max_actor_ckpt_to_keep=1
     trainer.val_before_train=true
     trainer.resume_mode=disable
     "trainer.default_local_dir=outputs/$RUN_NAME/checkpoints"

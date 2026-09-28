@@ -115,12 +115,12 @@ done
 
 ```bash
 for seed in 1 2 3; do
-  bash reproduction/run_alfworld_single_gpu.sh grpo "$seed"
-  bash reproduction/run_alfworld_single_gpu.sh target_acc "$seed"
-  bash reproduction/run_alfworld_single_gpu.sh gmsv "$seed"
+  RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh grpo "$seed"
+  RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh target_acc "$seed"
+  RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh gmsv "$seed"
 done
 
-python -m reproduction.summarize_results
+python -m reproduction.summarize_results --run-glob '*_l2-v1'
 ```
 
 推荐先完成 seed 1 的三方法闭环，再开始 seed 2/3。不要在某个方法单独 OOM 时只降低它的 batch 或 rollout 数；参数变更必须同步应用到全部方法。
@@ -131,9 +131,9 @@ python -m reproduction.summarize_results
 
 ```bash
 for seed in 1 2 3; do
-  bash reproduction/run_alfworld_single_gpu.sh fixed_sigma "$seed"
-  bash reproduction/run_alfworld_single_gpu.sh no_aux_sft "$seed"
-  bash reproduction/run_alfworld_single_gpu.sh deterministic_mean "$seed"
+  RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh fixed_sigma "$seed"
+  RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh no_aux_sft "$seed"
+  RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh deterministic_mean "$seed"
 done
 ```
 
@@ -149,7 +149,7 @@ done
 
 单卡启动器会把工作目录固定到仓库根，并在 `outputs/<run_name>/run_manifest.json` 自动保存启动命令、Git commit、工作区状态、补丁哈希、数据哈希、依赖版本、GPU 信息、退出状态和耗时，并把实际补丁保存为同目录的 `working_tree.patch`。Hydra 完整展开配置写入 `resolved_config.yaml`，终端输出写入 `console.log`，逐步指标写入 `metrics.jsonl`，训练 checkpoint 写入同一运行目录的 `checkpoints/`；checkpoint 核验还会写入 `checkpoint_identity.json`。每个新运行禁用隐式恢复，避免吸收其他实验的旧状态。
 
-训练完成后运行 `python -m reproduction.summarize_results`。它会剔除失败或缺少最终验证指标的运行，并拒绝不同代码、数据或预算的结果混算。简历只引用该门禁生成的同预算数字。
+正式实验统一设置 `RUN_TAG=l2-v1`。训练完成后运行 `python -m reproduction.summarize_results --run-glob '*_l2-v1'`，避免把 smoke、断点验证或其他预算混入候选集合。汇总器仍会剔除失败或缺少最终验证指标的运行，并拒绝该命名组内不同代码、数据或预算的结果混算。简历只引用该门禁生成的同预算数字。
 
 ## 7. OOM 排查顺序
 

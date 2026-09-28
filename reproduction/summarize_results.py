@@ -233,10 +233,12 @@ def render_report(runs: list[RunResult], excluded: list[tuple[Path, str]]) -> st
     return "\n".join(lines)
 
 
-def collect_runs(root: Path) -> tuple[list[RunResult], list[tuple[Path, str]]]:
+def collect_runs(
+    root: Path, run_glob: str = "*"
+) -> tuple[list[RunResult], list[tuple[Path, str]]]:
     runs = []
     excluded = []
-    for manifest in sorted(root.glob("*/run_manifest.json")):
+    for manifest in sorted(root.glob(f"{run_glob}/run_manifest.json")):
         run_dir = manifest.parent
         try:
             runs.append(load_run(run_dir))
@@ -248,9 +250,14 @@ def collect_runs(root: Path) -> tuple[list[RunResult], list[tuple[Path, str]]]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--runs-root", type=Path, default=Path("outputs"))
+    parser.add_argument(
+        "--run-glob",
+        default="*",
+        help="directory glob below --runs-root, e.g. '*_l2-v1'",
+    )
     parser.add_argument("--output", type=Path, default=Path("reproduction/reports/results.md"))
     args = parser.parse_args()
-    runs, excluded = collect_runs(args.runs_root)
+    runs, excluded = collect_runs(args.runs_root, args.run_glob)
     report = render_report(runs, excluded)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(report, encoding="utf-8")

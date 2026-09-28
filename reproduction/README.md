@@ -67,17 +67,17 @@ export BASE_MODEL_PATH=/data/models/qwen2.5-1.5b-instruct
 
 # 单张 24GB GPU：默认 LoRA rank 16，同预算运行主方法与两个关键基线
 bash reproduction/run_alfworld_smoke.sh 1
-bash reproduction/run_alfworld_single_gpu.sh gmsv 1
-bash reproduction/run_alfworld_single_gpu.sh grpo 1
-bash reproduction/run_alfworld_single_gpu.sh target_acc 1
+RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh gmsv 1
+RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh grpo 1
+RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh target_acc 1
 
 # 论文 Table 3 的三项关键消融
-bash reproduction/run_alfworld_single_gpu.sh fixed_sigma 1
-bash reproduction/run_alfworld_single_gpu.sh no_aux_sft 1
-bash reproduction/run_alfworld_single_gpu.sh deterministic_mean 1
+RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh fixed_sigma 1
+RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh no_aux_sft 1
+RUN_TAG=l2-v1 bash reproduction/run_alfworld_single_gpu.sh deterministic_mean 1
 
-# 三个方法、三个种子全部完成后，生成受约束的结果表
-python -m reproduction.summarize_results
+# 同一命名实验组完成后，生成受约束的结果表
+python -m reproduction.summarize_results --run-glob '*_l2-v1'
 ```
 
 配置差异的自动报告见 [`reports/config_audit.md`](reports/config_audit.md)，分层实验计划见 [`PLAN_zh.md`](PLAN_zh.md)。

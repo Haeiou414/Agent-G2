@@ -11,7 +11,7 @@ This fork contains an independently audited, limited-compute reproduction track;
 - Reimplemented and tested task-level Gaussian guidance, action-level prefix depth, and scheduler state persistence.
 - Audited 3,553 ALFWorld expert trajectories and found 7 scalar configuration mismatches plus 2 runtime-semantic mismatches between the paper and released recipe.
 - Verified Qwen2.5-1.5B LoRA training end to end on one RTX 4090 24GB: rollout, auxiliary SFT, GRPO update, validation, checkpoint resume, and reloadable PEFT adapter.
-- Preserved machine-readable manifests, resolved configs, step metrics, scheduler state, failures, GPU-hours, and budget estimates; 69 regression/evidence tests currently pass.
+- Preserved machine-readable manifests, resolved configs, step metrics, scheduler state, failures, GPU-hours, and budget estimates; 70 regression/evidence tests currently pass.
 - Current boundary: the 8-step run validates the engineering path only. Same-budget GRPO / target-accuracy / Agent-G² comparisons are still pending, so this fork does not yet claim a reproduced performance gain.
 
 Start with the [reproduction overview](reproduction/README.md), [RTX 4090 evidence report](reproduction/reports/gpu_smoke_report.md), [paper/config audit](reproduction/reports/config_audit.md), and [Chinese résumé/interview notes](reproduction/RESUME_zh.md).

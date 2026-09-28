@@ -92,6 +92,21 @@ class ResultSummaryTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "budget mismatch"):
                 render_report(runs, excluded)
 
+    def test_run_glob_isolates_a_named_experiment_cohort(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            write_run(root, "gmsv-smoke", "gmsv", 99, 0.0)
+            write_run(root, "gmsv-primary-v1", "gmsv", 1, 0.8)
+            write_run(root, "grpo-primary-v1", "grpo", 1, 0.6)
+
+            runs, excluded = collect_runs(root, "*-primary-v1")
+
+            self.assertEqual(excluded, [])
+            self.assertEqual(
+                {(run.method, run.seed) for run in runs},
+                {("gmsv", 1), ("grpo", 1)},
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

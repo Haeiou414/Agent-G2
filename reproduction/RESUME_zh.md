@@ -7,7 +7,7 @@
 
 可直接使用的两条描述：
 
-- 基于作者开源的 verl/GRPO 训练框架复现 Agent-G² Gaussian Guidance 调度器，将任务成功率 EMA、难度偏置、动态方差与 action-level expert prefix 拆为可独立验证组件，并建立 69 项回归测试和 CI。
+- 基于作者开源的 verl/GRPO 训练框架复现 Agent-G² Gaussian Guidance 调度器，将任务成功率 EMA、难度偏置、动态方差与 action-level expert prefix 拆为可独立验证组件，并建立 70 项回归测试和 CI。
 - 审计 3,553 条 ALFWorld 专家轨迹以及论文/代码的 12 个关键配置字段，定位 7 项标量配置差异和 2 项运行时语义差异；用固定 revision 的官方 tokenizer 发现原 token-level 实现在 guidance ratio=0.5 时有 36.0% 轨迹选择了不同动作深度，并修正任务级成功率聚合与前缀边界。
 - 在 RTX 4090 24GB 上打通 Qwen2.5-1.5B LoRA 的 rollout、辅助 SFT、GRPO 更新、验证、checkpoint 和断点续训；定位 full-parameter AdamW 首步 OOM、重启后环境变量丢失导致的零游戏忙循环，以及单卡 FSDP 的空 adapter 导出，并验证 73.9 MB PEFT adapter 可重新加载。
 

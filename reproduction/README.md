@@ -84,7 +84,7 @@ AutoDL 的 SSH、工作区同步与 Codex 远程项目配置见 [`AUTODL_REMOTE_
 AutoDL 环境可通过 `bash reproduction/bootstrap_autodl.sh` 一键初始化，并把大体积缓存固定到数据盘。
 8-step smoke test 完成后，可用 `python -m reproduction.estimate_rental_budget` 按实测耗时估算主实验与完整消融的租用预算。
 本次 RTX 4090 实测证据与限制见 [`reports/gpu_smoke_report.md`](reports/gpu_smoke_report.md)，80-step 顺序运行预算见 [`reports/autodl_budget.md`](reports/autodl_budget.md)。
-当前可用的简历表述、GPU 完成后的升级模板与面试讲法见 [`RESUME_zh.md`](RESUME_zh.md)。
+当前可用的简历表述、GPU 完成后的升级模板与面试讲法见 [`RESUME_zh.md`](RESUME_zh.md)。要在实验运行期间系统掌握算法、实现和面试要点，可按 [`LEARNING_GUIDE_zh.md`](LEARNING_GUIDE_zh.md) 的路线学习。
 
 ## GPU 实验验收
 

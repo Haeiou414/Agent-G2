@@ -4,7 +4,21 @@
 </h1>
 <h3 align="center"><em><ins>G</ins>aussian <ins>G</ins>uidance for Agentic Reinforcement Learning</em></h3>
 
-> Independent reproduction track: see [`reproduction/README.md`](reproduction/README.md) for the verified implementation, configuration audit, staged experiment plan, and reporting protocol.
+## Independent reproduction in this fork
+
+This fork contains an independently audited, limited-compute reproduction track; the paper claims and author results in the upstream README below are **not** presented as results produced by this fork.
+
+- Reimplemented and tested task-level Gaussian guidance, action-level prefix depth, and scheduler state persistence.
+- Audited 3,553 ALFWorld expert trajectories and found 7 scalar configuration mismatches plus 2 runtime-semantic mismatches between the paper and released recipe.
+- Verified Qwen2.5-1.5B LoRA training end to end on one RTX 4090 24GB: rollout, auxiliary SFT, GRPO update, validation, checkpoint resume, and reloadable PEFT adapter.
+- Preserved machine-readable manifests, resolved configs, step metrics, scheduler state, failures, GPU-hours, and budget estimates; 69 regression/evidence tests currently pass.
+- Current boundary: the 8-step run validates the engineering path only. Same-budget GRPO / target-accuracy / Agent-G² comparisons are still pending, so this fork does not yet claim a reproduced performance gain.
+
+Start with the [reproduction overview](reproduction/README.md), [RTX 4090 evidence report](reproduction/reports/gpu_smoke_report.md), [paper/config audit](reproduction/reports/config_audit.md), and [Chinese résumé/interview notes](reproduction/RESUME_zh.md).
+
+---
+
+The remainder of this page is the upstream project README.
 
 <p align="center">
   <a href="https://arxiv.org/abs/2608.23318"><img alt="Paper" src="https://img.shields.io/badge/arXiv-2608.23318-b31b1b"></a>
